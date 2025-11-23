@@ -1,0 +1,21 @@
+<section class="panel glass">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="h5 mb-0">Guild Leaderboard</h3>
+    <span class="badge bg-warning text-dark">Live</span>
+  </div>
+  <ol class="leaderboard list-unstyled">
+    {% for player in leaderboard %}
+      <li>
+        <div class="alias">{{ loop.index }}. {{ player['alias'] }}</div>
+        <div class="xp">{{ player['xp'] }} xp</div>
+        <div class="meta">⚔️ {{ player['submissions_count'] }} • 🔍 {{ player['scans_count'] }}</div>
+        {% if player['badges'] %}
+          <div class="badges">{{ player['badges'] }}</div>
+        {% endif %}
+      </li>
+    {% else %}
+      <li class="text-muted">No heroes yet. Be the first.</li>
+    {% endfor %}
+  </ol>
+  <button class="btn btn-sm btn-outline-light w-100" data-fetch-leaderboard>Refresh signal</button>
+</section>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bug Guild HQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body class="bg-dark text-light">
+    <header class="bg-gradient py-3 shadow-sm border-bottom border-secondary">
+      <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <p class="eyebrow text-uppercase">Bug Guild Control Room</p>
+          <h1 class="mb-0">Sudo GTD Glitch Vault</h1>
+          <small class="text-warning">{{ guild_mood }}</small>
+        </div>
+        <nav class="nav gap-2">
+          <a class="btn btn-outline-light" href="{{ url_for('index') }}">Register Bug</a>
+          <a class="btn btn-warning text-dark" href="{{ url_for('scan') }}">Scan Code</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container py-4">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          {% block content %}{% endblock %}
+        </div>
+        <div class="col-lg-4">
+          {% include 'components/_leaderboard.html' %}
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </body>
+</html>

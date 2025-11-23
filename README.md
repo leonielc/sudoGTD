@@ -1,76 +1,46 @@
-# Bug Tracker Web Application
+# Sudo GTD — Bug Guild Vault
 
-A simple Flask web application to register buggy code, document fixes, and analyze new code to find similar issues.
+A playful Flask web app where teammates archive tricky bugs, share how they fixed them, and scan new snippets to see if the vault already holds a similar anomaly. Every interaction feeds a gamified leaderboard so the most prolific bug slayers rise to the top.
 
 ## Features
 
-- **Register Bugs**: Save buggy code snippets with descriptions and fix instructions
-- **Analyze Code**: Submit code to check against the database for similar bugs
-- **Similarity Matching**: Uses text similarity algorithms to find matching buggy code patterns
-- **SQLite Database**: Lightweight database to store all bug records
+- **Bug Archive** – Submit code, name the bug, add tags, and describe the remedy.
+- **Similarity Scanner** – Paste new snippets to surface previously catalogued bugs using fuzzy matching.
+- **Gamification Layer** – Earn XP, badges, and artifacts for both submissions and scans.
+- **Live Leaderboard** – Watch contributions in real time with a single click.
+- **Daily Quests & Vibe Cards** – Rotating prompts and fortune-style flavor keep the experience lively.
 
-## Installation
+## Quickstart
 
-1. Install Python 3.7 or higher
-
-2. Install dependencies:
-```bash
+```fish
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+export FLASK_APP=app.py
+flask run --debug
 ```
 
-## Running the Application
+Visit <http://127.0.0.1:5000> to register bugs, then hop to `/scan` to query the vault.
 
-1. Start the Flask server:
-```bash
-python app.py
+## Tests
+
+```fish
+source .venv/bin/activate
+pytest
 ```
 
-2. Open your browser and go to:
-```
-http://127.0.0.1:5000
-```
-
-## Usage
-
-### Register a Bug
-1. Click "Register a Bug" on the home page
-2. Fill in:
-   - **Bug Name**: A descriptive name for the bug
-   - **Buggy Code**: The problematic code snippet
-   - **How to Fix**: Description of the fix or corrected code
-3. Click "Register Bug"
-
-### Analyze Code
-1. Click "Analyze Code" on the home page
-2. Paste the code you want to check
-3. Click "Analyze Code"
-4. View results showing similar bugs and their fixes (60%+ similarity threshold)
-
-## Project Structure
+## Project layout
 
 ```
-sudoGTD/
-├── app.py                 # Main Flask application
-├── templates/
-│   ├── index.html        # Home page
-│   ├── register.html     # Bug registration page
-│   └── query.html        # Code analysis page
-├── requirements.txt       # Python dependencies
-└── bugs.db               # SQLite database (created automatically)
+app.py                # Flask entry point
+bugverse/             # Storage, similarity, and gamification modules
+static/               # CSS + JS
+templates/            # Jinja templates
+tests/                # Pytest suite
 ```
 
-## API Endpoints
+## Notes
 
-- `GET /` - Home page
-- `GET /register` - Bug registration form
-- `POST /api/register` - Register a new bug (JSON)
-- `GET /query` - Code analysis form
-- `POST /api/query` - Analyze code (JSON)
-- `GET /api/bugs` - Get all bugs (JSON)
-
-## Technologies
-
-- **Backend**: Flask (Python)
-- **Database**: SQLite
-- **Frontend**: HTML, CSS, JavaScript
-- **Similarity Algorithm**: SequenceMatcher from Python's difflib
+- The app seeds the vault with three playful demo bugs on first launch.
+- XP and badges are lightweight and stored alongside user aliases in SQLite.
+- Similarity scoring relies on a normalized difflib ratio—easy to run anywhere.

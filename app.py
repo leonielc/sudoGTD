@@ -1,136 +1,190 @@
-from flask import Flask, render_template, request, jsonify
-import sqlite3
+from __future__ import annotations
+
 import os
-from difflib import SequenceMatcher
+import random
+from dataclasses import asdict
+from typing import Dict, List, Optional
+
+from flask import Flask, jsonify, redirect, render_template, request, url_for
+
+from bugverse import (
+    GamificationEngine,
+    fetch_bug_reports,
+    fetch_hunter,
+    fetch_leaderboard,
+    init_db,
+    rank_similar_bugs,
+    save_bug_report,
+    upsert_hunter,
+)
 
 app = Flask(__name__)
-DATABASE = 'bugs.db'
+app.config["SECRET_KEY"] = os.environ.get("BUGVAULT_SECRET", "bugverse-dev-key")
 
-def init_db():
-    """Initialize the database with bugs table."""
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bugs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bug_name TEXT NOT NULL,
-            buggy_code TEXT NOT NULL,
-            fix_description TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+init_db()
+engine = GamificationEngine()
 
-def similarity_score(code1, code2):
-    """Calculate similarity between two code snippets."""
-    # Normalize whitespace for better comparison
-    code1 = ' '.join(code1.split())
-    code2 = ' '.join(code2.split())
-    return SequenceMatcher(None, code1, code2).ratio()
 
-@app.route('/')
-def index():
-    """Home page."""
-    return render_template('index.html')
-
-@app.route('/register')
-def register():
-    """Register a new bug."""
-    return render_template('register.html')
-
-@app.route('/api/register', methods=['POST'])
-def api_register():
-    """API endpoint to register a bug."""
-    data = request.json
-    bug_name = data.get('bug_name', '').strip()
-    buggy_code = data.get('buggy_code', '').strip()
-    fix_description = data.get('fix_description', '').strip()
-    
-    if not bug_name or not buggy_code or not fix_description:
-        return jsonify({'error': 'All fields are required'}), 400
-    
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO bugs (bug_name, buggy_code, fix_description) VALUES (?, ?, ?)',
-        (bug_name, buggy_code, fix_description)
+@app.context_processor
+def inject_shared_context():
+    leaderboard = fetch_leaderboard()
+    guild_mood = random.choice(
+        [
+            "🔥 Hype levels critical",
+            "🧠 Brainstorm drizzle",
+            "⚡ Bug storm incoming",
+            "🌈 Refactor rainbow",
+        ]
     )
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'message': 'Bug registered successfully'}), 201
+    return dict(leaderboard=leaderboard, guild_mood=guild_mood)
 
-@app.route('/query')
-def query():
-    """Query page to check code against database."""
-    return render_template('query.html')
 
-@app.route('/api/query', methods=['POST'])
-def api_query():
-    """API endpoint to analyze code and find similar bugs."""
-    data = request.json
-    code_to_check = data.get('code', '').strip()
-    
-    if not code_to_check:
-        return jsonify({'error': 'Code is required'}), 400
-    
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, bug_name, buggy_code, fix_description FROM bugs')
-    bugs = cursor.fetchall()
-    conn.close()
-    
-    # Find similar bugs
-    threshold = 0.6  # 60% similarity threshold
-    matches = []
-    
-    for bug_id, bug_name, buggy_code, fix_description in bugs:
-        score = similarity_score(code_to_check, buggy_code)
-        if score >= threshold:
-            matches.append({
-                'id': bug_id,
-                'bug_name': bug_name,
-                'buggy_code': buggy_code,
-                'fix_description': fix_description,
-                'similarity': round(score * 100, 2)
-            })
-    
-    # Sort by similarity (highest first)
-    matches.sort(key=lambda x: x['similarity'], reverse=True)
-    
-    if matches:
-        return jsonify({
-            'found': True,
-            'matches': matches
-        })
-    else:
-        return jsonify({
-            'found': False,
-            'message': 'No buggy code lookalike found'
-        })
+@app.route("/")
+def index():
+    reports = fetch_bug_reports()
+    quests = build_daily_quests()
+    return render_template("index.html", reports=reports[:6], quests=quests)
 
-@app.route('/api/bugs')
-def api_bugs():
-    """Get all registered bugs."""
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, bug_name, buggy_code, fix_description, created_at FROM bugs ORDER BY created_at DESC')
-    bugs = cursor.fetchall()
-    conn.close()
-    
-    bug_list = []
-    for bug_id, bug_name, buggy_code, fix_description, created_at in bugs:
-        bug_list.append({
-            'id': bug_id,
-            'bug_name': bug_name,
-            'buggy_code': buggy_code,
-            'fix_description': fix_description,
-            'created_at': created_at
-        })
-    
-    return jsonify({'bugs': bug_list})
 
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+@app.route("/submit", methods=["POST"])
+def submit_bug():
+    payload = sanitize_submission(request.form)
+    existing = fetch_hunter(payload["alias"])
+    reward = engine.score_submission(
+        severity=payload["severity"],
+        tag_count=len(payload["tags"].split(",")) if payload["tags"] else 0,
+        code_length=len(payload["buggy_code"]),
+        existing_stats=_row_to_dict(existing),
+    )
+
+    save_bug_report(**payload, xp_awarded=reward.xp)
+    upsert_hunter(
+        alias=payload["alias"],
+        delta_xp=reward.xp,
+        submission_delta=1,
+        badges_to_add=reward.badges,
+    )
+
+    return redirect(
+        url_for(
+            "index",
+            highlight=f"{payload['bug_name']} (+{reward.xp}xp) — {reward.artifact}! {reward.flavor}",
+        )
+    )
+
+
+@app.route("/scan", methods=["GET", "POST"])
+def scan():
+    matches: List[Dict] = []
+    reward: Optional[Dict] = None
+    query_snippet = ""
+    alias = ""
+
+    if request.method == "POST":
+        alias = request.form.get("alias", "bugless_hero").strip() or "bugless_hero"
+        query_snippet = request.form.get("code", "")
+        reports = fetch_bug_reports()
+        matches = rank_similar_bugs(query_snippet=query_snippet, bug_rows=reports, limit=5)
+        best_score = matches[0]["score"] if matches else 0
+        existing = fetch_hunter(alias)
+        reward_bundle = engine.score_scan(
+            similarity=best_score,
+            snippets_checked=len(reports),
+            existing_stats=_row_to_dict(existing),
+        )
+        upsert_hunter(
+            alias=alias,
+            delta_xp=reward_bundle.xp,
+            scan_delta=1,
+            badges_to_add=reward_bundle.badges,
+        )
+        reward = asdict(reward_bundle)
+
+    vibe_card = build_vibe_card()
+    return render_template(
+        "scan.html",
+        matches=matches,
+        query_snippet=query_snippet,
+        alias=alias,
+        reward=reward,
+        vibe_card=vibe_card,
+    )
+
+
+@app.route("/api/leaderboard")
+def leaderboard_api():
+    rows = fetch_leaderboard(limit=15)
+    payload = [
+        {
+            "alias": row["alias"],
+            "xp": row["xp"],
+            "submissions": row["submissions_count"],
+            "scans": row["scans_count"],
+            "badges": list(filter(None, row["badges"].split(","))) if row["badges"] else [],
+        }
+        for row in rows
+    ]
+    return jsonify(payload)
+
+
+@app.route("/health")
+def health():
+    return {"status": "ok", "reports": len(fetch_bug_reports())}
+
+
+def sanitize_submission(form) -> Dict[str, str]:
+    return {
+        "alias": (form.get("alias") or "anonymous_hacker").strip()[:40],
+        "bug_name": (form.get("bug_name") or "Unnamed glitch").strip()[:80],
+        "buggy_code": form.get("buggy_code", "")[:4000],
+        "fix_description": form.get("fix_description", ""),
+        "severity": (form.get("severity") or "medium").lower(),
+        "tags": ",".join(filter(None, [tag.strip() for tag in (form.get("tags") or "").split(",")]))[:120],
+    }
+
+
+def _row_to_dict(row):
+    if row is None:
+        return None
+    return {key: row[key] for key in row.keys()}
+
+
+def build_daily_quests():
+    quests = [
+        {
+            "title": "Patch three array goblins",
+            "reward": "+45xp",
+            "tip": "Share a tricky boundary bug to rally the guild.",
+        },
+        {
+            "title": "Resonate with a legacy incantation",
+            "reward": "+20xp",
+            "tip": "Scan a dusty snippet to see if the archives respond.",
+        },
+        {
+            "title": "Gift a teammate a fix story",
+            "reward": "Mystery artifact",
+            "tip": "Tell us how you tamed a wild stacktrace.",
+        },
+    ]
+    random.shuffle(quests)
+    return quests
+
+
+def build_vibe_card():
+    sparks = [
+        "Chaotic good energy detected.",
+        "Your code hums with cosmic recursion.",
+        "Compiler spirits applaud your bravery.",
+        "You unlocked a hidden breakpoint of destiny.",
+    ]
+    return {
+        "title": random.choice(["Signal Echo", "Glitch Fortune", "Patch Prophecy"]),
+        "body": random.choice(sparks),
+        "aura": random.choice(["plasma", "nebula", "aurora", "metro"]),
+    }
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)

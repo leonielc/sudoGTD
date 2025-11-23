@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="panel glass">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <p class="eyebrow">Query the vault</p>
+      <h2 class="h4">Upload risky snippet &amp; get echoes</h2>
+    </div>
+    <div class="vibe vibe-{{ vibe_card.aura }}">
+      <h4 class="h6 text-uppercase">{{ vibe_card.title }}</h4>
+      <p class="mb-0 small">{{ vibe_card.body }}</p>
+    </div>
+  </div>
+
+  <form method="post" class="mb-4">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Alias</label>
+        <input class="form-control" name="alias" value="{{ alias }}" placeholder="signal-hunter" />
+      </div>
+      <div class="col-12">
+        <label class="form-label">Paste suspect code</label>
+        <textarea class="form-control" rows="8" name="code" placeholder="Paste code to scan" required>{{ query_snippet }}</textarea>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <small class="text-muted">We fuzz for structure + semantics, no network calls.</small>
+      <button class="btn btn-warning text-dark">Scan vault</button>
+    </div>
+  </form>
+
+  {% if reward %}
+    <div class="alert alert-success text-dark">
+      <strong>+{{ reward.xp }} xp</strong> — {{ reward.flavor }} Artifact unlocked: {{ reward.artifact }}
+      {% if reward.badges %}
+        <div class="mt-1">New badges: {{ reward.badges|join(', ') }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <h3 class="h5 mt-4">Signal matches</h3>
+  {% if matches %}
+    <div class="timeline">
+      {% for match in matches %}
+        <div class="timeline-card">
+          <div class="d-flex justify-content-between">
+            <p class="mb-1">{{ match.row['bug_name'] }} <span class="badge bg-info text-dark">{{ (match.score * 100)|round(1) }}% resonance</span></p>
+            <small>{{ match.row['severity']|capitalize }} • {{ match.row['alias'] }}</small>
+          </div>
+          <pre class="snippet">{{ match.row['buggy_code'][:200] }}{% if match.row['buggy_code']|length > 200 %}...{% endif %}</pre>
+          <p class="small text-info">{{ match.row['fix_description'] }}</p>
+          <p class="small text-muted">{{ match.insight }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No spooky echoes yet. Try another snippet or register more bugs.</p>
+  {% endif %}
+</section>
+{% endblock %}
