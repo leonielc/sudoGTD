@@ -1,0 +1,36 @@
+<idea-plugin>
+    <id>com.devgame.gamification</id>
+    <name>Dev Gamification</name>
+    <vendor>DevGame Studio</vendor>
+    
+    <description><![CDATA[
+        Transform coding into an epic adventure! Level up as you code, battle bosses when running tests,
+        and earn rewards for passing unit tests. Complete achievements and unlock reward packs!
+    ]]></description>
+    
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService 
+            serviceImplementation="com.devgame.services.GameStateService"/>
+        <projectService 
+            serviceImplementation="com.devgame.services.LevelingService"/>
+        <projectService 
+            serviceImplementation="com.devgame.services.AnimationService"/>
+        
+        <toolWindow 
+            id="DevGame Stats" 
+            anchor="right" 
+            factoryClass="com.devgame.ui.StatsToolWindow"/>
+    </extensions>
+    
+    <projectListeners>
+        <listener 
+            class="com.devgame.listeners.EditorListener"
+            topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <listener 
+            class="com.devgame.listeners.TestRunListener"
+            topic="com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener"/>
+    </projectListeners>
+</idea-plugin>
