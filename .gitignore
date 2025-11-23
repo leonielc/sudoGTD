@@ -1,0 +1,8 @@
+#Mac OS
+.DS_Store
+#Data base
+data/bugbank.db
+bugs.db
+#VSCode
+__pycache__/
+*/__pycache__/
