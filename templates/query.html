@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        #results {
+            margin-top: 30px;
+        }
+        
+        .no-results {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        .match-card {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .match-title {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .similarity-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .code-section {
+            margin-bottom: 15px;
+        }
+        
+        .code-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .fix-section {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .fix-label {
+            font-weight: 600;
+            color: #155724;
+            margin-bottom: 8px;
+        }
+        
+        .fix-text {
+            color: #155724;
+            white-space: pre-wrap;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Analyze Code</h1>
+        
+        <form id="queryForm">
+            <div class="form-group">
+                <label for="code">Code to Analyze:</label>
+                <textarea id="code" name="code" required placeholder="Paste your code here to check for similar bugs..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Analyze Code</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Back to Home</button>
+        </form>
+        
+        <div id="results" class="hidden"></div>
+    </div>
+    
+    <script>
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = document.getElementById('code').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = '<div class="loading">🔄 Analyzing code...</div>';
+            resultsDiv.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.found) {
+                    let html = `<h2 style="color: #667eea; margin-bottom: 20px;">✅ Found ${data.matches.length} Similar Bug(s)</h2>`;
+                    
+                    data.matches.forEach(match => {
+                        html += `
+                            <div class="match-card">
+                                <div class="match-header">
+                                    <div class="match-title">${escapeHtml(match.bug_name)}</div>
+                                    <div class="similarity-badge">${match.similarity}% Match</div>
+                                </div>
+                                
+                                <div class="code-section">
+                                    <div class="code-label">Buggy Code:</div>
+                                    <div class="code-block">${escapeHtml(match.buggy_code)}</div>
+                                </div>
+                                
+                                <div class="fix-section">
+                                    <div class="fix-label">💡 How to Fix:</div>
+                                    <div class="fix-text">${escapeHtml(match.fix_description)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="no-results">
+                            ✨ ${escapeHtml(data.message)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="no-results" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+                        ❌ Failed to analyze code
+                    </div>
+                `;
+            }
+        });
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
