@@ -31,4 +31,12 @@ build/
 
 # --- DevGame Specific (IMPORTANT) ---
 # This ensures your personal game stats (level, xp) don't get pushed to Git.
-devgame.xml
+devgame.xm
+
+#VSCode
+__pycache__/l
+
+#Data base
+data/
+data/bugbank.db
+bugs.db
