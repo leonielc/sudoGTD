@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Created-By: Gradle 8.5
-Build-JVM: 17.0.16 (Ubuntu 17.0.16+8-Ubuntu-0ubuntu124.04.1)
+Build-JVM: 21 (Oracle Corporation 21+35-2513)
 Version: 1.0.0
 Build-Plugin: Gradle IntelliJ Plugin
 Build-Plugin-Version: 1.17.2
-Build-OS: Linux 6.14.0-35-generic amd64
+Build-OS: Mac OS X 15.6 x86_64
 Build-SDK: IC-2025.2
 

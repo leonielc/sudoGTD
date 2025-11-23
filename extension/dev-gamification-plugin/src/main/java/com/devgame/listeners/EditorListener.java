@@ -25,6 +25,8 @@ public class EditorListener implements FileEditorManagerListener {
         if (document == null) return;
         
         Project project = source.getProject();
+        
+        // Initialize the count so we don't count the existing lines as "new" lines
         lastLineCounts.put(document, document.getLineCount());
         
         DocumentListener listener = new DocumentListener() {
@@ -33,12 +35,16 @@ public class EditorListener implements FileEditorManagerListener {
                 int currentLineCount = document.getLineCount();
                 int previousLineCount = lastLineCounts.getOrDefault(document, currentLineCount);
                 
-                if (currentLineCount > previousLineCount) {
-                    int linesAdded = currentLineCount - previousLineCount;
-                    LevelingService.getInstance(project).addLinesWritten(linesAdded);
-                    System.out.println("DevGame: Added " + linesAdded + " lines");
+                // Calculate difference (Positive if you type, Negative if you delete)
+                int diff = currentLineCount - previousLineCount;
+                
+                // Only update if the line count actually changed
+                if (diff != 0) {
+                    LevelingService.getInstance(project).addLinesWritten(diff);
+                    System.out.println("DevGame: Line change: " + diff);
                 }
                 
+                // Update the memory for the next keystroke
                 lastLineCounts.put(document, currentLineCount);
             }
         };
