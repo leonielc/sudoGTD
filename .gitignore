@@ -34,7 +34,7 @@ build/
 devgame.xm
 
 #VSCode
-__pycache__/l
+__pycache__/
 
 #Data base
 data/
