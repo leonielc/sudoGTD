@@ -114,6 +114,17 @@ body {
   transition: transform 0.2s ease;
 }
 
+.visit-btn {
+  color:black;
+  margin: auto;
+  background: none;
+  border-style: none;
+  font-weight: 600;
+  font-size: 1rem;
+  width: 510px;
+}
+color:black;margin: auto; background: none; border-style: none; font-weight: 600;
+
 .install-btn:active {
   transform: scale(0.97);
 }
