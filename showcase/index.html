@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SudoFocus Launchpad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <p class="eyebrow">sudoFocus arsenal</p>
+      <h1>Pick Your Power-Up</h1>
+      <p class="lead">Showcasing our hackathon duo: the IntelliJ companion and the Bug Guild web vault.</p>
+    </header>
+
+    <main class="grid">
+      <article class="product-card">
+        <img src="https://images.unsplash.com/photo-1505238680356-667803448bb6?auto=format&fit=crop&w=900&q=80" alt="Laptop with neon code" loading="lazy" />
+        <div class="card-body">
+          <h2>IntelliJ “Glitch Scout” Extension</h2>
+          <p>A context-aware code companion that lets you log cursed snippets without leaving the IDE. Highlights buggy patterns, syncs to the vault, and awards guild XP for every fix shared.</p>
+          <div class="pill-row">
+            <span class="pill">IDE-native</span>
+            <span class="pill">1-click logging</span>
+            <span class="pill">Quest hooks</span>
+          </div>
+          <button class="install-btn" data-target="jetbrains">Install</button>
+          <div class="progress-shell" data-progress-shell="jetbrains">
+            <div class="progress-bar"></div>
+            <span class="progress-label">warming up…</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="product-card">
+        <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=900&q=80" alt="Developers collaborating" loading="lazy" />
+        <div class="card-body">
+          <h2>Bug Guild Vault Website</h2>
+          <p>A neon-glass portal where squads register bugs, compare snippets, and climb a live leaderboard. Includes similarity scanning, pretend artifacts, and daily quests to keep morale sky-high.</p>
+          <div class="pill-row">
+            <span class="pill">Flask</span>
+            <span class="pill">Gamified</span>
+            <span class="pill">Similarity AI</span>
+          </div>
+          <button class="install-btn" data-target="webapp">Install</button>
+          <div class="progress-shell" data-progress-shell="webapp">
+            <div class="progress-bar"></div>
+            <span class="progress-label">initializing…</span>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer>
+      Made with extra espresso and team hype. Installs are purely theatrical.
+    </footer>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
